@@ -1,15 +1,16 @@
 // backend/server.js
 const express = require('express');
 const cors = require('cors');
-app.use(cors({
-    origin: 'https://registrations.saviskar.co.in'
-}));
-app.use(express.json());
 const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
 require('dotenv').config();
 
+// 🚩 CORRECTED: Declare 'app' constant before using it
 const app = express();
-app.use(cors());
+
+// 🚩 CORRECTED: The app.use() statements are now placed after the 'app' constant is defined.
+app.use(cors({
+    origin: 'https://registrations.saviskar.co.in'
+}));
 app.use(express.json());
 
 // Configure the AWS SES V3 client
@@ -50,7 +51,7 @@ app.post('/api/send-otp', async (req, res) => {
                         <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
                             <tr>
                                 <td align="center" style="padding: 40px 0 30px 0;">
-                                    <img src="https://i.ibb.co/FkG6hLVV/logo.png" alt="Saviskar 2025 Logo" width="180" style="display: block;">
+                                    <img src="https://i.ibb.co/FkG6hLV/logo.png" alt="Saviskar 2025 Logo" width="180" style="display: block;">
                                 </td>
                             </tr>
                             
