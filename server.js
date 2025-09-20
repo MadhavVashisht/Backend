@@ -1,19 +1,20 @@
-// backend/server.js
+// Import necessary libraries
 const express = require('express');
 const cors = require('cors');
 const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
 require('dotenv').config();
 
-// 🚩 CORRECTED: Declare 'app' constant before using it
+// Initialize Express app
 const app = express();
 
-// 🚩 CORRECTED: The app.use() statements are now placed after the 'app' constant is defined.
+// Configure CORS and JSON middleware
+// This allows your frontend (on a different domain) to make requests
 app.use(cors({
     origin: 'https://registrations.saviskar.co.in'
 }));
 app.use(express.json());
 
-// Configure the AWS SES V3 client
+// Configure the AWS SES V3 client with environment variables
 const sesClient = new SESClient({
     region: process.env.AWS_REGION,
     credentials: {
@@ -22,9 +23,10 @@ const sesClient = new SESClient({
     },
 });
 
-// In-memory store for OTPs. For production, use a database like Redis.
+// In-memory store for OTPs (temporary for demonstration)
 const otpStore = {};
 
+// API endpoint to send OTP
 app.post('/api/send-otp', async (req, res) => {
     const { email } = req.body;
     if (!email) {
@@ -32,9 +34,9 @@ app.post('/api/send-otp', async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore[email] = { otp, expires: Date.now() + 10 * 60 * 1000 }; // OTP expires in 10 mins
+    otpStore[email] = { otp, expires: Date.now() + 10 * 60 * 1000 }; // OTP expires in 10 minutes
 
-    // --- UPDATED EMAIL TEMPLATE ---
+    // HTML email template
     const emailHtmlBody = `
         <!DOCTYPE html>
         <html lang="en">
@@ -54,7 +56,6 @@ app.post('/api/send-otp', async (req, res) => {
                                     <img src="https://i.ibb.co/FkG6hLV/logo.png" alt="Saviskar 2025 Logo" width="180" style="display: block;">
                                 </td>
                             </tr>
-                            
                             <tr>
                                 <td style="padding: 0 40px 40px 40px;">
                                     <h1 style="font-size: 24px; color: #2c3e50; font-weight: 600; text-align: center; margin: 0 0 20px 0;">
@@ -63,23 +64,19 @@ app.post('/api/send-otp', async (req, res) => {
                                     <p style="font-size: 16px; color: #2c3e50; line-height: 1.6; text-align: center; margin: 0 0 30px 0;">
                                         Please use the following code to complete your registration.
                                     </p>
-                                    
                                     <div style="border: 1px solid #e0e0e0; border-radius: 12px; text-align: center; padding: 25px; margin-bottom: 30px;">
                                         <p style="font-size: 48px; font-weight: 700; color: #2ecc71; letter-spacing: 8px; margin: 0;">
                                             ${otp}
                                         </p>
                                     </div>
-                                    
                                     <p style="font-size: 15px; color: #7f8c8d; text-align: center; line-height: 1.5; margin: 0 0 10px 0;">
                                         This code is valid for <strong>10 minutes</strong>.
                                     </p>
-                                    
                                     <p style="font-size: 14px; color: #7f8c8d; text-align: center; line-height: 1.5; margin: 0;">
                                         If you did not request this, please disregard this email.
                                     </p>
                                 </td>
                             </tr>
-                            
                             <tr>
                                 <td align="center" style="padding: 30px 40px; background-color: #f8f9fa; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
                                     <p style="font-size: 12px; color: #7f8c8d; margin: 0;">
@@ -101,16 +98,16 @@ app.post('/api/send-otp', async (req, res) => {
             Body: {
                 Html: {
                     Charset: 'UTF-8',
-                    Data: emailHtmlBody, // Using the new template
+                    Data: emailHtmlBody,
                 },
-                Text: { // Plain text fallback
+                Text: {
                     Charset: 'UTF-8',
                     Data: `Your Saviskar Festival verification code is: ${otp}`,
                 },
             },
             Subject: { Charset: 'UTF-8', Data: 'Your Saviskar Festival Verification Code' },
         },
-        Source: 'noreply@saviskar.co.in', // Use your verified SES domain
+        Source: 'noreply@saviskar.co.in', // Your verified SES identity
     });
 
     try {
@@ -122,6 +119,7 @@ app.post('/api/send-otp', async (req, res) => {
     }
 });
 
+// API endpoint to verify OTP
 app.post('/api/verify-otp', (req, res) => {
     const { email, otp } = req.body;
     const stored = otpStore[email];
@@ -134,5 +132,6 @@ app.post('/api/verify-otp', (req, res) => {
     }
 });
 
+// Start the server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
